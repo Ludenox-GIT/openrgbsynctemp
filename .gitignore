@@ -1,0 +1,17 @@
+# Exe compilation and build outputs
+OpenRGBTempSync.exe
+OpenRGBTempSync_Debug.spec
+build/
+dist/
+*.spec
+
+# System/Temporary logs
+err*.txt
+out*.txt
+*.log
+
+# Personal configurations
+config.json
+
+# Node dependencies
+node_modules/

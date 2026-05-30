@@ -1,0 +1,21 @@
+{
+  "name": "delightful-newton",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "openrgb-sync": "python src/openrgb_temp_sync.py",
+    "openrgb-sync:sim": "python src/openrgb_temp_sync.py --simulate",
+    "build:exe": "pyinstaller --onefile --name \"OpenRGBTempSync\" src/openrgb_tray_app.py"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0",
+    "vitest": "^1.6.0",
+    "jsdom": "^24.1.0"
+  }
+}
