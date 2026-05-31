@@ -45,6 +45,46 @@ def get_config_path():
         app_dir = os.path.dirname(os.path.realpath(sys.argv[0]))
     return os.path.join(app_dir, "config.json")
 
+# NVML Ctypes interfaces for GPU temperature reading
+nvml_lib = None
+nvml_handle = None
+nvml_available = False
+
+def init_nvml():
+    global nvml_lib, nvml_handle, nvml_available
+    try:
+        # nvml.dll is usually in system32 path and handled automatically by Windows DLL search
+        nvml_lib = ctypes.CDLL("nvml.dll")
+        nvml_lib.nvmlInit()
+        
+        # Get handle for GPU index 0
+        nvml_handle = ctypes.c_void_p()
+        res = nvml_lib.nvmlDeviceGetHandleByIndex(0, ctypes.byref(nvml_handle))
+        if res == 0: # 0 corresponds to NVML_SUCCESS
+            nvml_available = True
+            return True
+    except Exception:
+        pass
+    nvml_lib = None
+    nvml_handle = None
+    nvml_available = False
+    return False
+
+def get_gpu_temperature():
+    global nvml_lib, nvml_handle, nvml_available
+    if not nvml_available or nvml_lib is None or nvml_handle is None:
+        return None
+    try:
+        temp = ctypes.c_uint()
+        # 0 corresponds to NVML_TEMPERATURE_GPU
+        res = nvml_lib.nvmlDeviceGetTemperature(nvml_handle, 0, ctypes.byref(temp))
+        if res == 0:
+            return float(temp.value)
+    except Exception:
+        pass
+    return None
+
+
 # Default configuration values
 DEFAULT_CONFIG = {
     "min_temp": 30.0,
@@ -53,8 +93,12 @@ DEFAULT_CONFIG = {
     "min_color": [0, 255, 0],     # Green
     "mid_color": [0, 0, 255],     # Blue
     "max_color": [255, 0, 0],     # Red
-    "brightness": 100             # 0 to 100
+    "brightness": 100,            # 0 to 100
+    "transition_speed": 5,         # 1 to 10
+    "device_temp_source": {}      # Key: device name -> Value: "cpu" or "gpu"
 }
+
+
 
 # Global config cache
 config = dict(DEFAULT_CONFIG)
@@ -227,6 +271,9 @@ class SyncController:
         icon.update_menu()
 
     def _run(self, icon):
+        # Initialize NVIDIA NVML API for GPU temperature monitoring
+        init_nvml()
+        
         # Connect to OpenRGB
         client = None
         try:
@@ -258,45 +305,149 @@ class SyncController:
             icon.update_menu()
             return
 
+        smoothed_cpu_temp = None
+        smoothed_gpu_temp = None
+        alpha_temp = 0.15  # EMA factor for temp smoothing
+        
+        # Track current color states for each LED to interpolate smoothly
+        # Key format: "device_name:led_index" -> [r, g, b]
+        current_led_colors = {}
+        
+        last_temp_read_time = 0.0
+        temp_read_interval = 1.0  # Read raw temperature every 1.0 second
+        
+        # Main high-frequency loop (20Hz)
         while not self.stop_event.is_set():
-            temp = get_cpu_temperature()
-            if temp is not None:
-                r, g, b = map_temp_to_rgb(temp)
-                icon.icon = create_tray_image((r, g, b))
+            current_time = time.time()
+            
+            # 1. Read raw temperatures periodically
+            if current_time - last_temp_read_time >= temp_read_interval:
+                last_temp_read_time = current_time
                 
-                # Read latest configuration settings
+                # CPU Temp
+                raw_cpu_temp = get_cpu_temperature()
+                if raw_cpu_temp is not None:
+                    if smoothed_cpu_temp is None:
+                        smoothed_cpu_temp = raw_cpu_temp
+                    else:
+                        smoothed_cpu_temp = (alpha_temp * raw_cpu_temp) + ((1 - alpha_temp) * smoothed_cpu_temp)
+                
+                # GPU Temp
+                raw_gpu_temp = get_gpu_temperature()
+                if raw_gpu_temp is not None:
+                    if smoothed_gpu_temp is None:
+                        smoothed_gpu_temp = raw_gpu_temp
+                    else:
+                        smoothed_gpu_temp = (alpha_temp * raw_gpu_temp) + ((1 - alpha_temp) * smoothed_gpu_temp)
+            
+            # We can run calculations if at least CPU temp is available
+            if smoothed_cpu_temp is not None:
+                # 2. Get transition speed factor from config
+                speed_val = config.get("transition_speed", 5)
+                # Keep within safe bounds [1, 10]
+                speed_val = max(1, min(10, speed_val))
+                step_factor = speed_val / 50.0  # 50ms step factor
+                
+                # 3. Calculate dynamic global tray icon color (smoothed CPU temp by default)
+                r_icon, g_icon, b_icon = map_temp_to_rgb(smoothed_cpu_temp)
+                icon.icon = create_tray_image((r_icon, g_icon, b_icon))
+                
                 device_led_bright = config.get("device_led_brightness", {})
-                global_bright = config["brightness"]
+                device_temp_source = config.get("device_temp_source", {})
                 
+                # 4. Interpolate and apply colors for each device
                 for device in self.devices:
                     try:
+                        # Determine temp source (cpu or gpu) - supporting per-LED configs with backwards compatibility
+                        device_source_config = device_temp_source.get(device.name, "cpu")
+                        if isinstance(device_source_config, str):
+                            device_default_source = device_source_config
+                            led_source_config = {}
+                        else:
+                            device_default_source = device_source_config.get("default", "cpu")
+                            led_source_config = device_source_config
+                            
                         led_count = len(device.leds)
                         if led_count > 0:
                             colors = []
-                            # Get per-LED configurations for this specific device
                             device_bright_config = device_led_bright.get(device.name, {})
                             
-                            for led in device.leds:
-                                # Apply per-LED brightness or global brightness
+                            for idx, led in enumerate(device.leds):
+                                # Determine brightness
                                 if led.name in device_bright_config:
                                     led_bright = device_bright_config[led.name]
                                 else:
-                                    led_bright = global_bright
+                                    led_bright = 100
                                     
-                                r_led, g_led, b_led = map_temp_to_rgb(temp, brightness=led_bright)
-                                colors.append(RGBColor(r_led, g_led, b_led))
-                            
+                                # Determine temp source for this specific LED
+                                led_source = led_source_config.get(led.name, device_default_source)
+                                active_temp = smoothed_gpu_temp if (led_source == "gpu" and smoothed_gpu_temp is not None) else smoothed_cpu_temp
+                                
+                                if active_temp is None:
+                                    target_r, target_g, target_b = 0, 0, 0
+                                else:
+                                    # Calculate target color for this LED
+                                    target_r, target_g, target_b = map_temp_to_rgb(active_temp, brightness=led_bright)
+                                
+                                # Retrieve/Initialize current color state
+                                led_key = f"{device.name}:{idx}"
+                                if led_key not in current_led_colors:
+                                    current_led_colors[led_key] = [float(target_r), float(target_g), float(target_b)]
+                                    
+                                curr_r, curr_g, curr_b = current_led_colors[led_key]
+                                
+                                # Lerp to target color
+                                curr_r += (target_r - curr_r) * step_factor
+                                curr_g += (target_g - curr_g) * step_factor
+                                curr_b += (target_b - curr_b) * step_factor
+                                
+                                # Cache updated state
+                                current_led_colors[led_key] = [curr_r, curr_g, curr_b]
+                                
+                                # Convert to integer color values for SDK (clamped to [0, 255])
+                                colors.append(RGBColor(
+                                    max(0, min(255, int(curr_r))),
+                                    max(0, min(255, int(curr_g))),
+                                    max(0, min(255, int(curr_b)))
+                                ))
+                                
                             device.set_colors(colors, fast=True)
                         else:
-                            r_led, g_led, b_led = map_temp_to_rgb(temp, brightness=global_bright)
-                            device.set_color(RGBColor(r_led, g_led, b_led), fast=True)
+                            # Device with 0 leds (fallback)
+                            led_source = device_default_source
+                            active_temp = smoothed_gpu_temp if (led_source == "gpu" and smoothed_gpu_temp is not None) else smoothed_cpu_temp
+                            if active_temp is None:
+                                continue
+                                
+                            target_r, target_g, target_b = map_temp_to_rgb(active_temp, brightness=100)
+                            device_key = f"{device.name}:default"
+                            
+                            if device_key not in current_led_colors:
+                                current_led_colors[device_key] = [float(target_r), float(target_g), float(target_b)]
+                                
+                            curr_r, curr_g, curr_b = current_led_colors[device_key]
+                            curr_r += (target_r - curr_r) * step_factor
+                            curr_g += (target_g - curr_g) * step_factor
+                            curr_b += (target_b - curr_b) * step_factor
+                            current_led_colors[device_key] = [curr_r, curr_g, curr_b]
+                            
+                            device.set_color(RGBColor(
+                                max(0, min(255, int(curr_r))),
+                                max(0, min(255, int(curr_g))),
+                                max(0, min(255, int(curr_b)))
+                            ), fast=True)
                     except Exception:
                         try:
-                            r_led, g_led, b_led = map_temp_to_rgb(temp, brightness=global_bright)
-                            device.set_color(RGBColor(r_led, g_led, b_led))
+                            # Fallback without animation
+                            active_temp = smoothed_gpu_temp if (device_default_source == "gpu" and smoothed_gpu_temp is not None) else smoothed_cpu_temp
+                            if active_temp is not None:
+                                r_led, g_led, b_led = map_temp_to_rgb(active_temp, brightness=100)
+                                device.set_color(RGBColor(r_led, g_led, b_led))
                         except Exception:
                             pass
-            time.sleep(POLL_INTERVAL)
+            time.sleep(0.05) # Run loop at 20Hz (50ms interval)
+
+
 
 
 # Create a dynamic tray icon image (a neon circular logo)
@@ -352,7 +503,7 @@ class SettingsGUI:
         self.tab_general = tk.Frame(self.notebook, bg=self.bg_color)
         self.tab_advanced = tk.Frame(self.notebook, bg=self.bg_color)
         
-        self.notebook.add(self.tab_general, text=" General Settings ")
+        self.notebook.add(self.tab_general, text=" Color Settings ")
         self.notebook.add(self.tab_advanced, text=" Advanced Per-LED Brightness ")
         
         # Set up fields
@@ -371,6 +522,7 @@ class SettingsGUI:
         
         self.root.protocol("WM_DELETE_WINDOW", self.hide)
         self.temp_led_brightness = {}
+        self.temp_device_sources = {}
 
     def rgb_to_hex(self, rgb):
         return f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
@@ -384,7 +536,7 @@ class SettingsGUI:
         self.min_temp_var = tk.DoubleVar()
         self.mid_temp_var = tk.DoubleVar()
         self.max_temp_var = tk.DoubleVar()
-        self.brightness_var = tk.IntVar()
+        self.transition_speed_var = tk.IntVar()
         
         self.min_color_val = [0, 255, 0]
         self.mid_color_val = [0, 0, 255]
@@ -444,12 +596,14 @@ class SettingsGUI:
         self.mid_btn.configure(command=lambda: choose_color(self.mid_color_val, self.mid_btn))
         self.max_btn.configure(command=lambda: choose_color(self.max_color_val, self.max_btn))
         
-        # Brightness Slider Frame
-        brightness_frame = tk.LabelFrame(container, text=" Global LED Brightness ", fg=self.accent_color, bg=self.bg_color, bd=1, relief="solid", highlightthickness=0, font=("Segoe UI", 9, "bold"), labelanchor="nw", padx=10, pady=15)
-        brightness_frame.pack(fill="x", pady=10)
+
+
+        # Transition Speed Slider Frame
+        speed_frame = tk.LabelFrame(container, text=" Color Transition Speed ", fg=self.accent_color, bg=self.bg_color, bd=1, relief="solid", highlightthickness=0, font=("Segoe UI", 9, "bold"), labelanchor="nw", padx=10, pady=12)
+        speed_frame.pack(fill="x", pady=5)
         
-        bright_slider = tk.Scale(brightness_frame, from_=0, to=100, orient="horizontal", variable=self.brightness_var, bg=self.bg_color, fg=self.fg_color, highlightthickness=0, activebackground=self.accent_color, troughcolor=self.card_bg)
-        bright_slider.pack(fill="x", expand=True)
+        speed_slider = tk.Scale(speed_frame, from_=1, to=10, orient="horizontal", variable=self.transition_speed_var, bg=self.bg_color, fg=self.fg_color, highlightthickness=0, activebackground=self.accent_color, troughcolor=self.card_bg)
+        speed_slider.pack(fill="x", expand=True)
 
     def setup_advanced_tab(self):
         container = tk.Frame(self.tab_advanced, bg=self.bg_color, padx=10, pady=10)
@@ -457,7 +611,7 @@ class SettingsGUI:
         
         # Device Selector
         selector_frame = tk.Frame(container, bg=self.bg_color)
-        selector_frame.pack(fill="x", pady=(0, 10))
+        selector_frame.pack(fill="x", pady=(0, 5))
         
         tk.Label(selector_frame, text="Select Device:", fg=self.fg_color, bg=self.bg_color, font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 10))
         
@@ -465,23 +619,31 @@ class SettingsGUI:
         self.device_combo.pack(side="left", fill="x", expand=True)
         self.device_combo.bind("<<ComboboxSelected>>", self.on_device_selected)
         
+        self.gpu_status_label = tk.Label(selector_frame, text="", fg=self.text_muted, bg=self.bg_color, font=("Segoe UI", 8, "italic"))
+        self.gpu_status_label.pack(side="left", padx=10)
+        
         # If no devices
         self.no_dev_label = tk.Label(container, text="Connecting to OpenRGB SDK...", fg=self.text_muted, bg=self.bg_color, font=("Segoe UI", 10))
         
         # Device details container
         self.dev_frame = tk.Frame(container, bg=self.bg_color)
+
         
         # Quick apply panel
         quick_panel = tk.Frame(self.dev_frame, bg=self.card_bg, pady=8, padx=10, bd=1, relief="solid", highlightthickness=0)
         quick_panel.pack(fill="x", pady=(0, 10))
         
-        tk.Label(quick_panel, text="Set all LEDs:", fg=self.fg_color, bg=self.card_bg, font=("Segoe UI", 9, "bold")).pack(side="left")
+        tk.Label(quick_panel, text="Set all:", fg=self.fg_color, bg=self.card_bg, font=("Segoe UI", 9, "bold")).pack(side="left")
         
         self.quick_scale_var = tk.IntVar(value=100)
-        quick_scale = tk.Scale(quick_panel, from_=0, to=100, orient="horizontal", variable=self.quick_scale_var, bg=self.card_bg, fg=self.fg_color, highlightthickness=0, length=150, showvalue=True)
-        quick_scale.pack(side="left", padx=10)
+        quick_scale = tk.Scale(quick_panel, from_=0, to=100, orient="horizontal", variable=self.quick_scale_var, bg=self.card_bg, fg=self.fg_color, highlightthickness=0, length=120, showvalue=True)
+        quick_scale.pack(side="left", padx=5)
         
-        apply_all_btn = tk.Button(quick_panel, text="Apply All", bg=self.accent_color, fg=self.fg_color, activebackground=self.accent_hover, activeforeground=self.fg_color, bd=0, padx=10, pady=4, font=("Segoe UI", 8, "bold"), command=self.apply_brightness_to_all_leds)
+        self.quick_source_combo = ttk.Combobox(quick_panel, values=["CPU", "GPU"], state="readonly", width=5)
+        self.quick_source_combo.set("CPU")
+        self.quick_source_combo.pack(side="left", padx=5)
+        
+        apply_all_btn = tk.Button(quick_panel, text="Apply All", bg=self.accent_color, fg=self.fg_color, activebackground=self.accent_hover, activeforeground=self.fg_color, bd=0, padx=10, pady=4, font=("Segoe UI", 8, "bold"), command=self.apply_settings_to_all_leds)
         apply_all_btn.pack(side="left", padx=5)
         
         # Scrollable area for LEDs
@@ -530,13 +692,22 @@ class SettingsGUI:
         if not device:
             return
             
+        if device.name not in self.temp_device_sources:
+            self.temp_device_sources[device.name] = {}
+            
+        device_sources = self.temp_device_sources[device.name]
+        # Legacy compatibility: if temp_device_sources stored a string previously instead of a dict
+        if isinstance(device_sources, str):
+            device_sources = {"default": device_sources}
+            self.temp_device_sources[device.name] = device_sources
+            
+        device_default_source = device_sources.get("default", "cpu")
+            
         leds = device.leds
         if not leds:
             tk.Label(self.scroll_frame, text="No controllable LEDs on this device.", fg=self.text_muted, bg=self.bg_color, font=("Segoe UI", 10)).pack(pady=20)
             return
             
-        global_bright = self.brightness_var.get()
-        
         if device.name not in self.temp_led_brightness:
             self.temp_led_brightness[device.name] = {}
             
@@ -546,10 +717,29 @@ class SettingsGUI:
             row.pack(fill="x", padx=5)
             
             # Led Label
-            tk.Label(row, text=led.name, fg=self.fg_color, bg=self.bg_color, font=("Segoe UI", 9), anchor="w", width=22).pack(side="left")
+            tk.Label(row, text=led.name, fg=self.fg_color, bg=self.bg_color, font=("Segoe UI", 9), anchor="w", width=18).pack(side="left")
             
-            # Get current individual brightness or default to global
-            led_bright = self.temp_led_brightness[device.name].get(led.name, global_bright)
+            # Dropdown combobox for CPU/GPU source
+            led_source = device_sources.get(led.name, device_default_source)
+            source_var = tk.StringVar(value="GPU" if led_source == "gpu" else "CPU")
+            
+            source_vals = ["CPU", "GPU"] if nvml_available else ["CPU"]
+            source_combo = ttk.Combobox(row, textvariable=source_var, values=source_vals, state="readonly", width=4)
+            source_combo.pack(side="left", padx=5)
+            
+            def make_source_callback(d_name, l_name, s_var):
+                def callback(event):
+                    if d_name not in self.temp_device_sources:
+                        self.temp_device_sources[d_name] = {}
+                    if isinstance(self.temp_device_sources[d_name], str):
+                        self.temp_device_sources[d_name] = {"default": self.temp_device_sources[d_name]}
+                    self.temp_device_sources[d_name][l_name] = s_var.get().lower()
+                return callback
+                
+            source_combo.bind("<<ComboboxSelected>>", make_source_callback(device.name, led.name, source_var))
+            
+            # Get current individual brightness or default to 100
+            led_bright = self.temp_led_brightness[device.name].get(led.name, 100)
             scale_var = tk.IntVar(value=led_bright)
             
             # Label percentage
@@ -557,10 +747,12 @@ class SettingsGUI:
             
             def make_callback(d_name, l_name, var):
                 def callback(*args):
+                    if d_name not in self.temp_led_brightness:
+                        self.temp_led_brightness[d_name] = {}
                     self.temp_led_brightness[d_name][l_name] = var.get()
                 return callback
                 
-            scale = tk.Scale(row, from_=0, to=100, orient="horizontal", variable=scale_var, bg=self.bg_color, fg=self.fg_color, highlightthickness=0, length=150, showvalue=False)
+            scale = tk.Scale(row, from_=0, to=100, orient="horizontal", variable=scale_var, bg=self.bg_color, fg=self.fg_color, highlightthickness=0, length=120, showvalue=False)
             scale.pack(side="left", padx=5)
             val_label.pack(side="left")
             
@@ -570,19 +762,27 @@ class SettingsGUI:
                 return lambda *args: label.configure(text=f"{var.get()}%")
             scale_var.trace_add("write", update_label(val_label, scale_var))
 
-    def apply_brightness_to_all_leds(self):
+    def apply_settings_to_all_leds(self):
         device_name = self.device_combo.get()
         if not device_name:
             return
-        val = self.quick_scale_var.get()
+        bright_val = self.quick_scale_var.get()
+        source_val = self.quick_source_combo.get().lower()
         
         if device_name not in self.temp_led_brightness:
             self.temp_led_brightness[device_name] = {}
+        if device_name not in self.temp_device_sources:
+            self.temp_device_sources[device_name] = {}
+        if isinstance(self.temp_device_sources[device_name], str):
+            self.temp_device_sources[device_name] = {"default": self.temp_device_sources[device_name]}
             
+        self.temp_device_sources[device_name]["default"] = source_val
+        
         for dev in controller.devices:
             if dev.name == device_name:
                 for led in dev.leds:
-                    self.temp_led_brightness[device_name][led.name] = val
+                    self.temp_led_brightness[device_name][led.name] = bright_val
+                    self.temp_device_sources[device_name][led.name] = source_val
                 break
                 
         # Re-render list
@@ -595,7 +795,7 @@ class SettingsGUI:
         self.min_temp_var.set(config["min_temp"])
         self.mid_temp_var.set(config["mid_temp"])
         self.max_temp_var.set(config["max_temp"])
-        self.brightness_var.set(config["brightness"])
+        self.transition_speed_var.set(config.get("transition_speed", 5))
         
         self.min_color_val = list(config["min_color"])
         self.mid_color_val = list(config["mid_color"])
@@ -607,6 +807,17 @@ class SettingsGUI:
         
         # Load advanced settings into temp dictionary
         self.temp_led_brightness = json.loads(json.dumps(config.get("device_led_brightness", {})))
+        self.temp_device_sources = json.loads(json.dumps(config.get("device_temp_source", {})))
+        
+        # Check NVML availability and set GPU status label + Combobox options
+        init_nvml()
+        if nvml_available:
+            self.quick_source_combo.configure(values=["CPU", "GPU"])
+            self.gpu_status_label.configure(text="")
+        else:
+            self.quick_source_combo.configure(values=["CPU"])
+            self.quick_source_combo.set("CPU")
+            self.gpu_status_label.configure(text="(NVIDIA GPU not detected)")
         
         # Populate Combobox with active OpenRGB devices
         if controller.running and controller.devices:
@@ -652,8 +863,10 @@ class SettingsGUI:
                 "min_color": self.min_color_val,
                 "mid_color": self.mid_color_val,
                 "max_color": self.max_color_val,
-                "brightness": self.brightness_var.get(),
-                "device_led_brightness": self.temp_led_brightness
+                "brightness": 100,
+                "device_led_brightness": self.temp_led_brightness,
+                "device_temp_source": self.temp_device_sources,
+                "transition_speed": self.transition_speed_var.get()
             }
             
             save_config(new_config)
