@@ -101,21 +101,42 @@ def is_screensaver_running():
 def is_computer_locked():
     try:
         from ctypes import wintypes
-        DESKTOP_SWITCHDESKTOP = 0x0100
+        UOI_NAME = 2
+        DESKTOP_READOBJECTINFORMATION = 0x0001
+        
         user32 = ctypes.WinDLL('user32', use_last_error=True)
-        user32.OpenDesktopW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
-        user32.OpenDesktopW.restype = wintypes.HANDLE
-        user32.SwitchDesktop.argtypes = (wintypes.HANDLE,)
-        user32.SwitchDesktop.restype = wintypes.BOOL
+        user32.OpenInputDesktop.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        user32.OpenInputDesktop.restype = wintypes.HANDLE
+        user32.GetUserObjectInformationW.argtypes = (wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD))
+        user32.GetUserObjectInformationW.restype = wintypes.BOOL
         user32.CloseDesktop.argtypes = (wintypes.HANDLE,)
         user32.CloseDesktop.restype = wintypes.BOOL
         
-        hnd_dt = user32.OpenDesktopW('default', 0, False, DESKTOP_SWITCHDESKTOP)
-        if not hnd_dt:
+        h_desktop = user32.OpenInputDesktop(0, False, DESKTOP_READOBJECTINFORMATION)
+        if not h_desktop:
+            # If OpenInputDesktop fails (typically with Access Denied - error code 5),
+            # it means a secure desktop (like Winlogon) is active, so the computer is locked.
             return True
-        result = user32.SwitchDesktop(hnd_dt)
-        user32.CloseDesktop(hnd_dt)
-        return not bool(result)
+            
+        try:
+            length_needed = wintypes.DWORD()
+            user32.GetUserObjectInformationW(h_desktop, UOI_NAME, None, 0, ctypes.byref(length_needed))
+            
+            buffer = ctypes.create_unicode_buffer(length_needed.value // ctypes.sizeof(ctypes.c_wchar))
+            success = user32.GetUserObjectInformationW(
+                h_desktop, 
+                UOI_NAME, 
+                buffer, 
+                ctypes.sizeof(buffer), 
+                ctypes.byref(length_needed)
+            )
+            
+            if success:
+                desktop_name = buffer.value.lower()
+                return desktop_name != "default"
+            return True # Assume locked if name retrieval failed
+        finally:
+            user32.CloseDesktop(h_desktop)
     except Exception:
         return False
 
