@@ -107,49 +107,6 @@ def is_screensaver_running():
     except Exception:
         return False
 
-def is_computer_locked():
-    try:
-        from ctypes import wintypes
-        UOI_NAME = 2
-        DESKTOP_READOBJECTINFORMATION = 0x0001
-        
-        user32 = ctypes.WinDLL('user32', use_last_error=True)
-        user32.OpenInputDesktop.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
-        user32.OpenInputDesktop.restype = wintypes.HANDLE
-        user32.GetUserObjectInformationW.argtypes = (wintypes.HANDLE, ctypes.c_int, wintypes.LPVOID, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD))
-        user32.GetUserObjectInformationW.restype = wintypes.BOOL
-        user32.CloseDesktop.argtypes = (wintypes.HANDLE,)
-        user32.CloseDesktop.restype = wintypes.BOOL
-        
-        h_desktop = user32.OpenInputDesktop(0, False, DESKTOP_READOBJECTINFORMATION)
-        if not h_desktop:
-            # If OpenInputDesktop fails (typically with Access Denied - error code 5),
-            # it means a secure desktop (like Winlogon) is active, so the computer is locked.
-            return True
-            
-        try:
-            length_needed = wintypes.DWORD()
-            user32.GetUserObjectInformationW(h_desktop, UOI_NAME, None, 0, ctypes.byref(length_needed))
-            
-            buffer = ctypes.create_unicode_buffer(length_needed.value // ctypes.sizeof(ctypes.c_wchar))
-            success = user32.GetUserObjectInformationW(
-                h_desktop, 
-                UOI_NAME, 
-                buffer, 
-                ctypes.sizeof(buffer), 
-                ctypes.byref(length_needed)
-            )
-            
-            if success:
-                desktop_name = buffer.value.lower()
-                return desktop_name != "default"
-            return True # Assume locked if name retrieval failed
-        finally:
-            user32.CloseDesktop(h_desktop)
-    except Exception:
-        return False
-
-
 # Default configuration values
 DEFAULT_CONFIG = {
     "min_temp": 30.0,
@@ -161,8 +118,7 @@ DEFAULT_CONFIG = {
     "brightness": 100,            # 0 to 100
     "transition_speed": 5,         # 1 to 10
     "device_temp_source": {},     # Key: device name -> Value: "cpu" or "gpu"
-    "stop_on_screensaver": False,
-    "stop_on_lock": False
+    "stop_on_screensaver": False
 }
 
 
@@ -315,16 +271,35 @@ class SyncController:
         self.status_text = "Status: Idle"
         self.devices = []
         self.auto_paused = False
+        self.lights_off = False
 
     def start(self, icon):
         if self.running:
             return
         self.running = True
+        self.lights_off = False
         self.stop_event.clear()
         self.status_text = "Status: Connecting..."
         icon.update_menu()
         self.thread = threading.Thread(target=self._run, args=(icon,), daemon=True)
         self.thread.start()
+
+    def set_lights_off(self, off, icon):
+        self.lights_off = off
+        if off:
+            self.status_text = "Status: Lights Off"
+            # Set all devices to black (off) once to save power
+            off_color = RGBColor(0, 0, 0)
+            for device in self.devices:
+                try:
+                    device.set_color(off_color)
+                except Exception:
+                    pass
+            icon.icon = create_tray_image((100, 100, 100))
+        else:
+            self.status_text = "Status: Running" if self.running else "Status: Stopped"
+            icon.icon = create_tray_image()
+        icon.update_menu()
 
     def stop(self, icon):
         if not self.running:
@@ -388,6 +363,16 @@ class SyncController:
         while not self.stop_event.is_set():
             current_time = time.time()
             
+            if self.lights_off:
+                off_color = RGBColor(0, 0, 0)
+                for device in self.devices:
+                    try:
+                        device.set_color(off_color)
+                    except Exception:
+                        pass
+                time.sleep(0.5)
+                continue
+            
             # 1. Read raw temperatures periodically
             if current_time - last_temp_read_time >= temp_read_interval:
                 last_temp_read_time = current_time
@@ -396,8 +381,7 @@ class SyncController:
                 should_pause = False
                 if config.get("stop_on_screensaver", False) and is_screensaver_running():
                     should_pause = True
-                if config.get("stop_on_lock", False) and is_computer_locked():
-                    should_pause = True
+
                     
                 if should_pause:
                     if not self.auto_paused:
@@ -631,7 +615,6 @@ class SettingsGUI:
         self.max_temp_var = tk.DoubleVar()
         self.transition_speed_var = tk.IntVar()
         self.stop_on_screensaver_var = tk.BooleanVar()
-        self.stop_on_lock_var = tk.BooleanVar()
         
         self.min_color_val = [0, 255, 0]
         self.mid_color_val = [0, 0, 255]
@@ -706,9 +689,6 @@ class SettingsGUI:
         
         screensaver_check = tk.Checkbutton(integration_frame, text="Turn off LEDs when screensaver starts", variable=self.stop_on_screensaver_var, bg=self.bg_color, fg=self.fg_color, selectcolor=self.card_bg, activebackground=self.bg_color, activeforeground=self.fg_color, font=("Segoe UI", 9))
         screensaver_check.pack(anchor="w", pady=4)
-        
-        lock_check = tk.Checkbutton(integration_frame, text="Turn off LEDs when workstation locks", variable=self.stop_on_lock_var, bg=self.bg_color, fg=self.fg_color, selectcolor=self.card_bg, activebackground=self.bg_color, activeforeground=self.fg_color, font=("Segoe UI", 9))
-        lock_check.pack(anchor="w", pady=4)
 
     def setup_advanced_tab(self):
         container = tk.Frame(self.tab_advanced, bg=self.bg_color, padx=10, pady=10)
@@ -902,7 +882,6 @@ class SettingsGUI:
         self.max_temp_var.set(config["max_temp"])
         self.transition_speed_var.set(config.get("transition_speed", 5))
         self.stop_on_screensaver_var.set(config.get("stop_on_screensaver", False))
-        self.stop_on_lock_var.set(config.get("stop_on_lock", False))
         
         self.min_color_val = list(config["min_color"])
         self.mid_color_val = list(config["mid_color"])
@@ -974,8 +953,7 @@ class SettingsGUI:
                 "device_led_brightness": self.temp_led_brightness,
                 "device_temp_source": self.temp_device_sources,
                 "transition_speed": self.transition_speed_var.get(),
-                "stop_on_screensaver": self.stop_on_screensaver_var.get(),
-                "stop_on_lock": self.stop_on_lock_var.get()
+                "stop_on_screensaver": self.stop_on_screensaver_var.get()
             }
             
             save_config(new_config)
@@ -1001,6 +979,9 @@ def setup_tray():
         else:
             controller.start(icon)
 
+    def toggle_lights(icon, item):
+        controller.set_lights_off(not controller.lights_off, icon)
+
     def toggle_startup_option(icon, item):
         state = not is_startup_enabled()
         set_startup_state(state)
@@ -1013,6 +994,11 @@ def setup_tray():
         pystray.MenuItem(
             lambda text: "Stop Sync" if controller.running else "Start Sync",
             toggle_sync
+        ),
+        pystray.MenuItem(
+            lambda text: "Turn Lights On" if controller.lights_off else "Turn Lights Off",
+            toggle_lights,
+            enabled=lambda item: controller.running
         ),
         pystray.MenuItem("Settings", lambda icon, item: settings_app.show()),
         pystray.MenuItem(
