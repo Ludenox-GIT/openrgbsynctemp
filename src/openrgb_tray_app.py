@@ -16,8 +16,17 @@ class NullWriter:
         pass
 
 if getattr(sys, 'frozen', False):
-    sys.stdout = NullWriter()
-    sys.stderr = NullWriter()
+    import os
+    exe_dir = os.path.dirname(sys.executable)
+    # Redirect C-level standard descriptors 1 and 2 to 'nul' to avoid crashes in Tcl/Tk C libraries
+    try:
+        null_fd = os.open('nul', os.O_WRONLY)
+        os.dup2(null_fd, 1)
+        os.dup2(null_fd, 2)
+    except Exception:
+        pass
+    sys.stdout = open(os.path.join(exe_dir, "stdout.log"), "w", encoding="utf-8")
+    sys.stderr = open(os.path.join(exe_dir, "stderr.log"), "w", encoding="utf-8")
 
 import time
 import mmap
@@ -1031,13 +1040,25 @@ def setup_tray():
     threading.Thread(target=icon.run, daemon=True).start()
 
 if __name__ == "__main__":
-    # 1. Initialize settings window in main thread
-    settings_app = SettingsGUI()
-    
-    # 2. Set up system tray icon in background thread
-    setup_tray()
-    
-    # 3. Block and process GUI events safely on Main Thread
-    settings_app.root.mainloop()
+    print("Main block started...", flush=True)
+    try:
+        # 1. Initialize settings window in main thread
+        print("Initializing SettingsGUI...", flush=True)
+        settings_app = SettingsGUI()
+        print("SettingsGUI initialized.", flush=True)
+        
+        # 2. Set up system tray icon in background thread
+        print("Setting up tray...", flush=True)
+        setup_tray()
+        print("Tray setup done.", flush=True)
+        
+        # 3. Block and process GUI events safely on Main Thread
+        print("Entering mainloop...", flush=True)
+        settings_app.root.mainloop()
+        print("Exited mainloop.", flush=True)
+    except Exception as e:
+        print(f"Exception in __main__: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
 
 
