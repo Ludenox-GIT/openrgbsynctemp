@@ -84,6 +84,41 @@ def get_gpu_temperature():
         pass
     return None
 
+def is_screensaver_running():
+    try:
+        SPI_GETSCREENSAVERRUNNING = 0x72
+        is_running = ctypes.c_bool(False)
+        result = ctypes.windll.user32.SystemParametersInfoW(
+            SPI_GETSCREENSAVERRUNNING, 
+            0, 
+            ctypes.byref(is_running), 
+            0
+        )
+        return is_running.value if result else False
+    except Exception:
+        return False
+
+def is_computer_locked():
+    try:
+        from ctypes import wintypes
+        DESKTOP_SWITCHDESKTOP = 0x0100
+        user32 = ctypes.WinDLL('user32', use_last_error=True)
+        user32.OpenDesktopW.argtypes = (wintypes.LPCWSTR, wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        user32.OpenDesktopW.restype = wintypes.HANDLE
+        user32.SwitchDesktop.argtypes = (wintypes.HANDLE,)
+        user32.SwitchDesktop.restype = wintypes.BOOL
+        user32.CloseDesktop.argtypes = (wintypes.HANDLE,)
+        user32.CloseDesktop.restype = wintypes.BOOL
+        
+        hnd_dt = user32.OpenDesktopW('default', 0, False, DESKTOP_SWITCHDESKTOP)
+        if not hnd_dt:
+            return True
+        result = user32.SwitchDesktop(hnd_dt)
+        user32.CloseDesktop(hnd_dt)
+        return not bool(result)
+    except Exception:
+        return False
+
 
 # Default configuration values
 DEFAULT_CONFIG = {
@@ -95,7 +130,9 @@ DEFAULT_CONFIG = {
     "max_color": [255, 0, 0],     # Red
     "brightness": 100,            # 0 to 100
     "transition_speed": 5,         # 1 to 10
-    "device_temp_source": {}      # Key: device name -> Value: "cpu" or "gpu"
+    "device_temp_source": {},     # Key: device name -> Value: "cpu" or "gpu"
+    "stop_on_screensaver": False,
+    "stop_on_lock": False
 }
 
 
@@ -247,6 +284,7 @@ class SyncController:
         self.stop_event = threading.Event()
         self.status_text = "Status: Idle"
         self.devices = []
+        self.auto_paused = False
 
     def start(self, icon):
         if self.running:
@@ -324,6 +362,31 @@ class SyncController:
             if current_time - last_temp_read_time >= temp_read_interval:
                 last_temp_read_time = current_time
                 
+                # Check auto-pause conditions
+                should_pause = False
+                if config.get("stop_on_screensaver", False) and is_screensaver_running():
+                    should_pause = True
+                if config.get("stop_on_lock", False) and is_computer_locked():
+                    should_pause = True
+                    
+                if should_pause:
+                    if not self.auto_paused:
+                        self.auto_paused = True
+                        self.status_text = "Status: Auto-Paused"
+                        icon.update_menu()
+                        # Set all devices to black (off) once to save power
+                        off_color = RGBColor(0, 0, 0)
+                        for device in self.devices:
+                            try:
+                                device.set_color(off_color)
+                            except Exception:
+                                pass
+                else:
+                    if self.auto_paused:
+                        self.auto_paused = False
+                        self.status_text = "Status: Running"
+                        icon.update_menu()
+                
                 # CPU Temp
                 raw_cpu_temp = get_cpu_temperature()
                 if raw_cpu_temp is not None:
@@ -340,8 +403,8 @@ class SyncController:
                     else:
                         smoothed_gpu_temp = (alpha_temp * raw_gpu_temp) + ((1 - alpha_temp) * smoothed_gpu_temp)
             
-            # We can run calculations if at least CPU temp is available
-            if smoothed_cpu_temp is not None:
+            # We can run calculations if at least CPU temp is available and not auto-paused
+            if smoothed_cpu_temp is not None and not self.auto_paused:
                 # 2. Get transition speed factor from config
                 speed_val = config.get("transition_speed", 5)
                 # Keep within safe bounds [1, 10]
@@ -537,6 +600,8 @@ class SettingsGUI:
         self.mid_temp_var = tk.DoubleVar()
         self.max_temp_var = tk.DoubleVar()
         self.transition_speed_var = tk.IntVar()
+        self.stop_on_screensaver_var = tk.BooleanVar()
+        self.stop_on_lock_var = tk.BooleanVar()
         
         self.min_color_val = [0, 255, 0]
         self.mid_color_val = [0, 0, 255]
@@ -604,6 +669,16 @@ class SettingsGUI:
         
         speed_slider = tk.Scale(speed_frame, from_=1, to=10, orient="horizontal", variable=self.transition_speed_var, bg=self.bg_color, fg=self.fg_color, highlightthickness=0, activebackground=self.accent_color, troughcolor=self.card_bg)
         speed_slider.pack(fill="x", expand=True)
+
+        # System Integration Frame (Lock/Screensaver auto-stop)
+        integration_frame = tk.LabelFrame(container, text=" System Integration ", fg=self.accent_color, bg=self.bg_color, bd=1, relief="solid", highlightthickness=0, font=("Segoe UI", 9, "bold"), labelanchor="nw", padx=10, pady=10)
+        integration_frame.pack(fill="x", pady=5)
+        
+        screensaver_check = tk.Checkbutton(integration_frame, text="Turn off LEDs when screensaver starts", variable=self.stop_on_screensaver_var, bg=self.bg_color, fg=self.fg_color, selectcolor=self.card_bg, activebackground=self.bg_color, activeforeground=self.fg_color, font=("Segoe UI", 9))
+        screensaver_check.pack(anchor="w", pady=4)
+        
+        lock_check = tk.Checkbutton(integration_frame, text="Turn off LEDs when workstation locks", variable=self.stop_on_lock_var, bg=self.bg_color, fg=self.fg_color, selectcolor=self.card_bg, activebackground=self.bg_color, activeforeground=self.fg_color, font=("Segoe UI", 9))
+        lock_check.pack(anchor="w", pady=4)
 
     def setup_advanced_tab(self):
         container = tk.Frame(self.tab_advanced, bg=self.bg_color, padx=10, pady=10)
@@ -796,6 +871,8 @@ class SettingsGUI:
         self.mid_temp_var.set(config["mid_temp"])
         self.max_temp_var.set(config["max_temp"])
         self.transition_speed_var.set(config.get("transition_speed", 5))
+        self.stop_on_screensaver_var.set(config.get("stop_on_screensaver", False))
+        self.stop_on_lock_var.set(config.get("stop_on_lock", False))
         
         self.min_color_val = list(config["min_color"])
         self.mid_color_val = list(config["mid_color"])
@@ -866,7 +943,9 @@ class SettingsGUI:
                 "brightness": 100,
                 "device_led_brightness": self.temp_led_brightness,
                 "device_temp_source": self.temp_device_sources,
-                "transition_speed": self.transition_speed_var.get()
+                "transition_speed": self.transition_speed_var.get(),
+                "stop_on_screensaver": self.stop_on_screensaver_var.get(),
+                "stop_on_lock": self.stop_on_lock_var.get()
             }
             
             save_config(new_config)
