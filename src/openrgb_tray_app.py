@@ -118,6 +118,7 @@ DEFAULT_CONFIG = {
     "brightness": 100,            # 0 to 100
     "transition_speed": 5,         # 1 to 10
     "device_temp_source": {},     # Key: device name -> Value: "cpu" or "gpu"
+    "device_led_brightness": {},   # Key: device name -> Key: LED name -> Value: brightness percentage
     "stop_on_screensaver": False
 }
 
