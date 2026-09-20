@@ -60,4 +60,4 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ---
 
-*Lưu ý: Ứng dụng mô phỏng web Newton (`index.html`, `vite.config.js`) là dự án phụ độc lập trong kho mã và không nằm trong gói phát hành của OpenRGB Temp Sync.*
+Kho mã chỉ chứa OpenRGB Temp Sync và SensorBridge; các artefact build/cache được loại khỏi source và không nằm trong gói phát hành.
