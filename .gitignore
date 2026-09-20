@@ -3,7 +3,12 @@ OpenRGBTempSync.exe
 OpenRGBTempSync_Debug.spec
 build/
 dist/
+release/
+web-dist/
+.toolchain/
 *.spec
+!OpenRGBTempSync.spec
+!OpenRGBTempSync.OneFile.spec
 
 # System/Temporary logs
 err*.txt
@@ -15,3 +20,16 @@ config.json
 
 # Node dependencies
 node_modules/
+
+# Vendor staging & temporary tools
+vendor/
+write_file.py
+LocalState/
+sensor-bridge/bin/
+sensor-bridge/obj/
+sensor-bridge.Tests/bin/
+sensor-bridge.Tests/obj/
+# Python bytecode
+__pycache__/
+*.pyc
+package-lock.json

@@ -1,0 +1,105 @@
+{
+    "schema_version": 1,
+    "description": "Pinned dependencies manifest for Unified OpenRGB Temp Sync application",
+    "artifacts": [
+        {
+            "name": "openrgb",
+            "version": "1.0",
+            "filename": "OpenRGB_1.0_Windows_64_81bbe18.zip",
+            "source_url": "https://codeberg.org/OpenRGB/OpenRGB/releases/download/release_1.0/OpenRGB_1.0_Windows_64_81bbe18.zip",
+            "commit_or_tag": "81bbe18",
+            "size_bytes": 40700000,
+            "sha256": "182A52A3C97C4C4AE52C80286B4260C9666C51C3447DBC416EE8945F66192E90",
+            "license": "GPL-2.0-or-later",
+            "source_archive_sha256": "GATE_UNVERIFIED_SOURCE_ARCHIVE"
+        },
+        {
+            "name": "openrgb-python",
+            "version": "0.3.7",
+            "filename": "openrgb_python-0.3.7-py3-none-any.whl",
+            "source_url": "https://files.pythonhosted.org/packages/4a/52/6314f85e4ea7599cb04bc8d7b372fba176d634ff999fc996d910243e8bb8/openrgb_python-0.3.7-py3-none-any.whl",
+            "commit_or_tag": "v0.3.7",
+            "size_bytes": 34185,
+            "sha256": "2188636e7a5831a8030abe34b234ede8d4a263ba02bc903d975eb55a80551833",
+            "license": "GPL-3.0-only",
+            "source_archive_sha256": "GATE_SOURCE_SDIST_UNVERIFIED"
+        },
+        {
+            "name": "LibreHardwareMonitorLib",
+            "version": "0.9.6",
+            "filename": "librehardwaremonitorlib.0.9.6.nupkg",
+            "source_url": "https://www.nuget.org/api/v2/package/LibreHardwareMonitorLib/0.9.6",
+            "commit_or_tag": "3d331e3370efb858411f19511373eff65a218701",
+            "size_bytes": 472895,
+            "sha256": "GATE_NUGET_HASH_UNVERIFIED_OFFLINE",
+            "license": "MPL-2.0",
+            "source_archive_sha256": "GATE_SOURCE_COMMIT_UNVERIFIED"
+        },
+        {
+            "name": "Pillow",
+            "version": "12.3.0",
+            "filename": "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+            "source_url": "https://pypi.org/project/Pillow/12.3.0/",
+            "commit_or_tag": "12.3.0",
+            "size_bytes": 3100000,
+            "sha256": "GATE_INSTALLED_IN_PYTHON312",
+            "license": "HPND",
+            "source_archive_sha256": "GATE_INSTALLED_IN_PYTHON312"
+        },
+        {
+            "name": "pystray",
+            "version": "0.19.5",
+            "filename": "pystray-0.19.5-py2.py3-none-any.whl",
+            "source_url": "https://pypi.org/project/pystray/0.19.5/",
+            "commit_or_tag": "0.19.5",
+            "size_bytes": 52000,
+            "sha256": "GATE_PACKAGE_UNSTAGED",
+            "license": "GPL-3.0-or-later",
+            "source_archive_sha256": "GATE_PACKAGE_UNSTAGED"
+        },
+        {
+            "name": "PyInstaller",
+            "version": "6.22.3",
+            "filename": "pyinstaller-6.22.3.tar.gz",
+            "source_url": "https://pypi.org/project/pyinstaller/6.22.3/",
+            "commit_or_tag": "v6.22.3",
+            "size_bytes": 3800000,
+            "sha256": "GATE_PACKAGE_UNSTAGED",
+            "license": "GPL-2.0-or-later",
+            "source_archive_sha256": "GATE_PACKAGE_UNSTAGED"
+        },
+        {
+            "name": "InnoSetup",
+            "version": "6.7.3",
+            "filename": "innosetup-6.7.3.exe",
+            "source_url": "https://jrsoftware.org/isdl.php",
+            "commit_or_tag": "v6.7.3",
+            "size_bytes": 5200000,
+            "sha256": "GATE_TOOLCHAIN_UNAVAILABLE",
+            "license": "Modified BSD-like",
+            "source_archive_sha256": "GATE_TOOLCHAIN_UNAVAILABLE"
+        },
+        {
+            "name": "PawnIO",
+            "version": "1.0.0",
+            "filename": "PawnIO_x64.msi",
+            "source_url": "https://openrgb.org/",
+            "commit_or_tag": "OpenRGB-1.0",
+            "size_bytes": 1200000,
+            "sha256": "GATE_DRIVER_UNVERIFIED_UNTIL_INSTALLER",
+            "license": "Proprietary/Vendor",
+            "source_archive_sha256": "GATE_DRIVER_UNVERIFIED_UNTIL_INSTALLER"
+        },
+        {
+            "name": "dotnet-runtime",
+            "version": "8.0",
+            "filename": "dotnet-runtime-8.0-win-x64",
+            "source_url": "https://dotnet.microsoft.com/download/dotnet/8.0",
+            "commit_or_tag": "v8.0",
+            "size_bytes": 0,
+            "sha256": "GATE_DOTNET_UNAVAILABLE",
+            "license": "MIT",
+            "source_archive_sha256": "GATE_DOTNET_UNAVAILABLE"
+        }
+    ]
+}

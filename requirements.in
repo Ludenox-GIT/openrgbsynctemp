@@ -1,0 +1,5 @@
+pillow==12.3.0
+pystray==0.19.5
+openrgb-python==0.3.7
+psutil==7.2.2
+pywin32==312

@@ -1,0 +1,739 @@
+{
+  "engine_state": "RUNNING_EXTERNAL",
+  "engine_message": "Connected to External OpenRGB",
+  "inventory": [
+    {
+      "name": "ENE DRAM",
+      "stable_key": "ENE DRAM_17823057d57f",
+      "zones": [
+        {
+          "name": "DRAM",
+          "leds": 8
+        }
+      ],
+      "mode_count": 10
+    },
+    {
+      "name": "ENE DRAM",
+      "stable_key": "ENE DRAM_7ae6489f72be",
+      "zones": [
+        {
+          "name": "DRAM",
+          "leds": 8
+        }
+      ],
+      "mode_count": 10
+    },
+    {
+      "name": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "stable_key": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR_0ad810e640d0",
+      "zones": [
+        {
+          "name": "GPU zone 1",
+          "leds": 1
+        },
+        {
+          "name": "GPU zone 2",
+          "leds": 1
+        },
+        {
+          "name": "GPU zone 3",
+          "leds": 1
+        },
+        {
+          "name": "GPU zone 4",
+          "leds": 1
+        },
+        {
+          "name": "GPU zone 5",
+          "leds": 1
+        }
+      ],
+      "mode_count": 9
+    },
+    {
+      "name": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "stable_key": "MSI MAG B550 TOMAHAWK (MS-7C91)_afd8c4c4d940",
+      "zones": [
+        {
+          "name": "JRGB1",
+          "leds": 1
+        },
+        {
+          "name": "JRGB2",
+          "leds": 1
+        },
+        {
+          "name": "JRAINBOW1",
+          "leds": 2
+        },
+        {
+          "name": "JRAINBOW2",
+          "leds": 2
+        },
+        {
+          "name": "ONBOARD",
+          "leds": 6
+        }
+      ],
+      "mode_count": 23
+    }
+  ],
+  "mode_tests": [
+    {
+      "device": "ENE DRAM",
+      "mode": "Direct",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Direct",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Off",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Off",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Static",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Static",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Breathing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Breathing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Flashing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Flashing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Spectrum Cycle",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Spectrum Cycle",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 15.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Rainbow",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Rainbow",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Chase Fade",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Chase Fade",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Chase",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Chase",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Random Flicker",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Random Flicker",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Direct",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Direct",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Off",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Off",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Static",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Static",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Breathing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Breathing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Flashing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Flashing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Spectrum Cycle",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Spectrum Cycle",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Rainbow",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Rainbow",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 31.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Chase Fade",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Chase Fade",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Chase",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Chase",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "ENE DRAM",
+      "mode": "Random Flicker",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Random Flicker",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Direct",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Direct",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Pulse",
+      "ok": false,
+      "unsupported": true,
+      "write_ok": false,
+      "readback": "Direct",
+      "readback_ok": false,
+      "error": "Mode readback mismatch: expected Pulse, got 0",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Flash",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Flash",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Double Flash",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Double Flash",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Color Cycle",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color Cycle",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 15.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Gradient",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Gradient",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Wave",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Wave",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Color Shift",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color Shift",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 16.0
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "mode": "Tricolor",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Tricolor",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Direct",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Direct",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Static",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Static",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Breathing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Breathing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Flashing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Flashing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 16.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Double flashing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Double flashing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Lightning",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Lightning",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Meteor",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Meteor",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 15.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Color ring",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color ring",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Planetary",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Planetary",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Double meteor",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Double meteor",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 16.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Energy",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Energy",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Blink",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Blink",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Clock",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Clock",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 15.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Color pulse",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color pulse",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Color shift",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color shift",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Color wave",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color wave",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 16.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Marquee",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Marquee",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Rainbow wave",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Rainbow wave",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Visor",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Visor",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 16.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Rainbow flashing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Rainbow flashing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Color ring double flashing",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Color ring double flashing",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Stack",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Stack",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 31.0
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "mode": "Fire",
+      "ok": true,
+      "unsupported": false,
+      "write_ok": true,
+      "readback": "Fire",
+      "readback_ok": true,
+      "error": "",
+      "elapsed_ms": 0.0
+    }
+  ],
+  "color_tests": [
+    {
+      "device": "ENE DRAM",
+      "ok": true,
+      "direct_mode_ok": true,
+      "error": "",
+      "led_count": 8
+    },
+    {
+      "device": "ENE DRAM",
+      "ok": true,
+      "direct_mode_ok": true,
+      "error": "",
+      "led_count": 8
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "ok": true,
+      "direct_mode_ok": true,
+      "error": "",
+      "led_count": 5
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "ok": true,
+      "direct_mode_ok": true,
+      "error": "",
+      "led_count": 12
+    }
+  ],
+  "restore_tests": [
+    {
+      "device": "ENE DRAM",
+      "ok": true,
+      "mode": "Rainbow",
+      "zones": [
+        8
+      ]
+    },
+    {
+      "device": "ENE DRAM",
+      "ok": true,
+      "mode": "Rainbow",
+      "zones": [
+        8
+      ]
+    },
+    {
+      "device": "Gigabyte AORUS GeForce RTX 3060 ELITE LHR",
+      "ok": true,
+      "mode": "Direct",
+      "zones": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "device": "MSI MAG B550 TOMAHAWK (MS-7C91)",
+      "ok": true,
+      "mode": "Rainbow wave",
+      "zones": [
+        1,
+        1,
+        2,
+        2,
+        6
+      ]
+    }
+  ],
+  "summary": {
+    "device_count": 4,
+    "mode_total": 52,
+    "mode_pass": 51,
+    "mode_unsupported": 1,
+    "mode_fail": 0,
+    "color_total": 4,
+    "color_pass": 4,
+    "restore_total": 4,
+    "restore_pass": 4
+  }
+}

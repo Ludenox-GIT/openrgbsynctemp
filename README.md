@@ -1,82 +1,63 @@
-# OpenRGB Temp Sync
+# OpenRGB Temp Sync (Unified Desktop App)
 
-**OpenRGB Temp Sync** là một ứng dụng chạy ẩn dưới khay hệ thống (System Tray) dành cho Windows, giúp tự động đồng bộ hóa màu sắc đèn LED của máy tính dựa theo nhiệt độ của CPU hoặc GPU trong thời gian thực.
+**OpenRGB Temp Sync** là ứng dụng hoàn chỉnh và thống nhất chạy dưới khay hệ thống (System Tray) trên Windows, tự động đồng bộ hóa màu sắc đèn LED máy tính theo nhiệt độ thời gian thực của CPU hoặc GPU.
 
-Ứng dụng kết nối trực tiếp đến máy chủ **OpenRGB SDK** và điều khiển độc lập từng bóng LED trên các thiết bị tương thích (Mainboard, RAM, VGA, Quạt ARGB, Dây LED...).
+Phiên bản Unified One-App tích hợp trọn gói:
+1. **Một bộ cài đặt duy nhất (One Installer)**: Cài đặt và cấu hình hoàn chỉnh trong một lần, không cần cài đặt hoặc khởi chạy thủ công OpenRGB hay Core Temp.
+2. **Quản lý máy chủ OpenRGB độc lập**: Tự động khởi chạy máy chủ OpenRGB nội bộ ở chế độ ẩn, an toàn tuyệt đối trên giao diện loopback cục bộ (`127.0.0.1:6742`).
+3. **Bộ đọc cảm biến nội bộ (Internal Sensor Bridge)**: Tích hợp công nghệ `LibreHardwareMonitorLib` để đọc nhiệt độ CPU (AMD/Intel) và GPU (NVIDIA) trực tiếp với quyền Administrator.
+4. **Khởi động cùng Windows qua Scheduled Task**: Sử dụng tác vụ đăng nhập đặc quyền cao (Elevated Logon Scheduled Task) để khởi động tự động mượt mà, không bật thông báo UAC phiền toái.
 
 ---
 
-## 🌟 Tính Năng Nổi Bật
+## 🌟 Tính Năng Chính
 
-- **Đồng bộ hóa mượt mà (Smoothed Transitions):** Sử dụng thuật toán lọc nhiễu số (EMA) và nội suy màu sắc ở tần số cao (20Hz) giúp màu đèn chuyển đổi cực kỳ mượt mà, không bị giật cục khi nhiệt độ nhảy đột ngột.
+- **Đồng bộ hóa mượt mà (Smoothed Transitions):**
+  Thuật toán lọc Exponential Moving Average (EMA) kết hợp nội suy màu sắc 20 Hz (Linear Interpolation) mang lại chuyển động đổi màu êm ái, loại bỏ hiện tượng nhấp nháy khi nhiệt độ biến thiên nhanh.
 - **Tùy biến chi tiết từng bóng LED (Per-LED Customization):**
-  - Đặt độ sáng độc lập (0% - 100%) cho từng đèn.
-  - Chọn nguồn nhiệt độ độc lập (CPU hoặc GPU) cho từng đèn.
-- **Hỗ trợ Đa nguồn nhiệt độ (CPU/GPU Temp):**
-  - Đọc nhiệt độ CPU qua bộ nhớ chia sẻ của **Core Temp** (vượt qua các rào cản bảo mật driver của Windows Core Isolation/Memory Integrity).
-  - Đọc nhiệt độ GPU của các dòng card đồ họa **NVIDIA** thông qua thư viện gốc `nvml.dll`.
-- **Tích hợp hệ thống thông minh:**
-  - Tự động tắt đèn LED để tiết kiệm điện năng khi màn hình chờ (Screensaver) được kích hoạt.
-  - Menu chuột phải tiện lợi: Bật/tắt nhanh đồng bộ, bật/tắt nhanh đèn LED, mở Cài đặt, và tùy chọn khởi động cùng Windows.
-  - Chạy ẩn 100% không hiện cửa sổ dòng lệnh đen (Console window).
+  - Điều chỉnh độ sáng độc lập (0% - 100%) cho từng bóng LED.
+  - Chọn nguồn nhiệt độ độc lập (CPU hoặc GPU) cho từng bóng LED.
+  - Hỗ trợ đổi hàng loạt ("Set all") cực nhanh trong giao diện cài đặt.
+- **Điều khiển dải LED địa chỉ (Addressable Zones):**
+  - Chọn riêng số bóng cho các zone có thể cấu hình như `JRAINBOW1/JRAINBOW2`; giới hạn min/max lấy trực tiếp từ OpenRGB và được lưu lại cho lần chạy sau.
+  - Nút **Reset to Original** trả từng thiết bị về mode, màu và số bóng trước khi app bắt đầu đồng bộ; **Resume Sync** bật lại điều khiển nhiệt độ.
+  - **Restore Manufacturer Defaults** là thao tác riêng. Với MSI B550, hai ENE DRAM và Gigabyte RTX 3060 hiện chưa có đường lệnh OEM exact-device được chứng minh nên nút này hiển thị `Unverified` và bị khóa; app không giả mạo snapshot restore/OpenRGB Reset Zone thành reset nhà sản xuất. Vendor baseline snapshots được lưu theo canonical stable key độc lập để ghi nhận trạng thái mong muốn của phần cứng mà không giả lập OEM factory reset.
+- **Bảo mật và an toàn kết nối:**
+  - Kiểm tra nghiêm ngặt cổng 6742; từ chối và chặn kết nối nếu phát hiện listener mở rộng ra toàn mạng (`0.0.0.0` wildcard) để bảo vệ mạng nội bộ.
+  - Tự động nhận diện và kết nối an toàn với máy chủ OpenRGB bên ngoài nếu đang mở sẵn.
+  - Cơ chế Windows Job Object đảm bảo các tiến trình con (OpenRGB engine và Sensor bridge) luôn được đóng sạch sẽ khi ứng dụng tắt, không để lại tiến trình mồ côi.
+- **Tích hợp khay hệ thống thông minh:**
+  - Biểu tượng khay đổi màu động theo nhiệt độ thực tế.
+  - Menu khay tiện lợi: Start/Stop Sync, Bật/Tắt đèn (Turn Lights Off), Settings, Khởi động cùng Windows, Retry Engine, và Export Diagnostics.
+  - Tự động tắt đèn tiết kiệm điện khi màn hình chờ (Screensaver) kích hoạt.
 
 ---
 
-## 🛠️ Yêu Cầu Hệ Thống & Chuẩn Bị
+## ⚙️ Cài Đặt & Sử Dụng
 
-Để phần mềm hoạt động chính xác, máy tính của bạn cần chạy sẵn hai phần mềm nền sau:
+1. Bản phát hành một file mới nhất là `release/OpenRGBTempSync-Final.exe`; chạy file bằng quyền Administrator. File tự bung OpenRGB và SensorBridge vào thư mục tạm khi chạy, còn cấu hình/log vẫn nằm trong `%LOCALAPPDATA%\OpenRGBTempSync`.
+2. Ứng dụng sẽ tự khởi động và xuất hiện tại khay hệ thống (System Tray).
+3. Nhấp đúp hoặc nhấp chuột phải vào biểu tượng khay -> chọn **Settings** để cấu hình ngưỡng nhiệt độ, bảng màu và độ sáng đèn.
+4. Tùy chọn **Start with Windows** được cấu hình tự động thông qua Windows Task Scheduler.
 
-1. **[Core Temp](https://www.alcpu.com/CoreTemp/):** Khởi chạy Core Temp để ứng dụng có thể đọc nhiệt độ CPU. (Có thể thu nhỏ vào khay hệ thống).
-2. **[OpenRGB](https://openrgb.org/):**
-   - Khởi chạy OpenRGB.
-   - Đi tới tab **SDK Server** và nhấn **Start Server** (mặc định chạy trên cổng `6742`).
-   - *Lưu ý:* Cần thiết lập OpenRGB khởi động cùng Windows và tự động bật SDK Server.
-3. **NVIDIA Driver (Tùy chọn):** Chỉ cần thiết nếu bạn muốn đồng bộ màu đèn theo nhiệt độ GPU NVIDIA.
+### Trạng thái xác minh phần cứng
 
----
-
-## 🚀 Hướng Dẫn Cài Đặt & Sử Dụng
-
-### Cách 1: Sử dụng File Chạy Ngay (.exe) - Khuyên Dùng
-Bạn không cần cài đặt Python, chỉ cần tải thư mục dự án về máy:
-1. Chạy **`start.bat`** để khởi chạy ứng dụng ẩn vào khay hệ thống. Lúc này bạn sẽ thấy biểu tượng hình nguyên tử neon sáng lên ở góc phải màn hình.
-2. Để cấu hình màu sắc, nhấp chuột phải vào biểu tượng khay hệ thống và chọn **`Settings`**.
-3. Để tắt ứng dụng hoàn toàn, nhấp chuột phải vào biểu tượng và chọn **`Exit`** hoặc chạy file **`stop.bat`**.
-
-### Cách 2: Chạy từ Mã nguồn Python
-Nếu bạn muốn chỉnh sửa hoặc chạy trực tiếp bằng Python:
-1. Cài đặt Python 3.10 trở lên và các thư viện cần thiết:
-   ```bash
-   pip install pillow pystray openrgb-python
-   ```
-2. Khởi chạy ứng dụng:
-   ```bash
-   pythonw src/openrgb_tray_app.py
-   ```
+Tự động kiểm thử mã nguồn đạt 171/171. Smoke test trên OpenRGB SDK của máy này đã xác nhận nhận đủ 4 controller và sau khi khởi động lại đều khôi phục mode `Direct`. Baseline hiện tại do người dùng xác nhận là mặc định đã được lưu dưới tên `vendor_default` trong `%LOCALAPPDATA%\OpenRGBTempSync\config.json`, tách riêng hai thanh RAM bằng stable key. Hướng effect dạng chữ được chuyển đúng sang enum số mà SDK yêu cầu; `SetCustomMode` chỉ dùng cho motherboard MSI đã xác định, còn RAM/GPU dùng mode packet thông thường để tránh làm rơi socket SDK. Khi socket rơi, engine chuyển sang `Degraded`, UI hiển thị lỗi kết nối và yêu cầu retry thay vì vẫn hiển thị Running. Nút **Reset to Original** có fallback sang baseline đã lưu khi snapshot runtime mất sau reconnect. **Restore Manufacturer Defaults** vẫn khóa `Unverified` cho MSI B550, ENE DRAM và Gigabyte RTX 3060 cho đến khi có bằng chứng OEM độc lập và cold-boot.
 
 ---
 
-## ⚙️ Hướng Dẫn Cấu Hình (Settings)
+## 🛠️ Hướng Dẫn Phát Triển & Kiểm Thử
 
-Nhấp chuột phải vào biểu tượng khay hệ thống và chọn **Settings** để mở bảng điều khiển:
+Chi tiết quy trình build và kiểm thử:
+- [Hướng dẫn Build & Đóng gói](docs/BUILD.md)
+- [Cẩm nang Xử lý Sự cố (Troubleshooting)](docs/TROUBLESHOOTING.md)
+- [Thông tin Bản quyền bên thứ ba (Third-Party Notices)](docs/THIRD_PARTY.md)
 
-### 1. Tab Color Settings (Cài đặt Màu sắc & Hệ thống)
-- **Temperature Thresholds & Colors:** Cài đặt 3 mốc nhiệt độ (Low / Mid / High) và màu sắc tương ứng (mặc định: Xanh lá ở 30°C, Xanh dương ở 60°C, Đỏ ở 75°C). Bạn có thể nhấp vào ô màu để tự do chọn màu tùy ý qua bảng màu Windows.
-- **Color Transition Speed:** Tốc độ phản hồi và chuyển màu của đèn LED (Từ 1 - 10, số càng lớn chuyển màu càng nhanh).
-- **System Integration:**
-  - `Turn off LEDs when screensaver starts`: Tự động tắt LED khi màn hình chờ Screensaver bắt đầu.
-- **Start with Windows:** Tích chọn trên Menu chuột phải để ứng dụng tự động chạy khi bạn mở máy.
-
-### 2. Tab Advanced Per-LED Brightness (Cài đặt Nâng cao từng đèn)
-- **Select Device:** Chọn thiết bị phần cứng đang kết nối với OpenRGB để cấu hình.
-- **Danh sách bóng LED:** Mỗi dòng tương ứng với một bóng đèn trên thiết bị:
-  - Chọn **CPU** hoặc **GPU** làm nguồn nhiệt độ điều khiển bóng đèn đó.
-  - Kéo thanh trượt để chỉnh độ sáng độc lập cho bóng đèn đó từ `0%` đến `100%`.
-- **Set all (Áp dụng nhanh):** Chọn độ sáng và nguồn nhiệt độ ở bảng điều khiển nhanh đầu tab, sau đó nhấn **`Apply All`** để áp dụng đồng loạt cho toàn bộ bóng đèn của thiết bị đó.
-- Nhấn **`Save Settings`** để lưu lại cấu hình. Mọi thiết lập được lưu trữ di động trong file `config.json` nằm cùng thư mục phần mềm.
+Chạy bộ kiểm thử tự động:
+```powershell
+python -m unittest discover -s tests -p "test_*.py" -v
+```
 
 ---
 
-## 📄 Giấy Phép & Bản Quyền
-
-Dự án này được phát triển phục vụ mục đích đồng bộ hóa cá nhân và hoàn toàn miễn phí.
+*Lưu ý: Ứng dụng mô phỏng web Newton (`index.html`, `vite.config.js`) là dự án phụ độc lập trong kho mã và không nằm trong gói phát hành của OpenRGB Temp Sync.*
